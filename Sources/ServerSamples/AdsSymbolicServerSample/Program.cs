@@ -12,6 +12,7 @@ using TwinCAT.Ads;
 using TwinCAT.Ads.Reactive;
 using TwinCAT.Ads.TypeSystem;
 using TwinCAT.TypeSystem;
+using System.Runtime.CompilerServices;
 
 namespace AdsSymbolicServerSample
 {
@@ -99,8 +100,8 @@ namespace AdsSymbolicServerSample
                         // Call RPC Methods with different variants of Parameters.
                         CallRpcMethods(symbols);
 
-                        // Receiving notifications on all Symbols
-                        SymbolIterator iter = new SymbolIterator(symbols,true);
+                        // Receiving notifications on all Symbols (that are not virtual, have a value)
+                        SymbolIterator iter = new SymbolIterator(symbols,true,s => ((IValueSymbol)s).HasValue);
                         IList<ISymbol> allSymbols = iter.ToList();
                         disposables = ReceiveNotifications(session,allSymbols);
 
@@ -167,10 +168,29 @@ namespace AdsSymbolicServerSample
 
         private static void CallReadBySymbol(ISymbolCollection<ISymbol> symbols)
         {
-            var bSymbol = (IValueSymbol) symbols["Main.bool1"];
-            var sSymbol = (IValueSymbol) symbols["Main.string1"];
-            bool bValue = (bool) bSymbol.ReadValue();
-            string sValue = (string) sSymbol.ReadValue();
+            var bSymbol = (Symbol)symbols["Main.bool1"];
+            var rSymbol = (Symbol)symbols["Main.real1"];
+            var lrSymbol = (Symbol)symbols["Main.lreal1"];
+
+            var sSymbol = (Symbol)symbols["Main.string1"];
+            var cSymbol = (Symbol)symbols["Main.mystruct1.name"];
+
+            var structSymbol = (Symbol)symbols["Main.mystruct1"];
+            var complexSymbol = (Symbol)symbols["Main.myComplexArray"];
+
+            bool bValue = (bool)bSymbol.ReadValue();
+
+            float rValue = (float)rSymbol.ReadValue(); // Read float
+            double lrValue = (double)lrSymbol.ReadValue(); // Read double
+
+            string sValue = (string)sSymbol.ReadValue();
+            string cValue = (string)cSymbol.ReadValue();
+
+            var structValue = structSymbol.ReadValue(); // Will Read Raw Value
+            var complexValue = complexSymbol.ReadValue(); // Will Read Raw Value
+
+            var myStructValue = structSymbol.ReadAnyValue<MyStruct>(); // Reading as ANY Type
+            var myComplexArrayValue = complexSymbol.ReadAnyValue<MyStruct[]>(); // Reading as ANY TYPE
         }
 
         private static void CallRpcMethods(ISymbolCollection<ISymbol> symbols)
@@ -207,6 +227,9 @@ namespace AdsSymbolicServerSample
 
             IDisposable subscription = SubscribeNotifications(session, symbols, NotificationSettings.Default);
             
+            //Enable for different Notification strategy
+            //IDisposable subscription = SubscribeNotifications(session, symbols, NotificationSettings.ImmediatelyOnChange);
+
             // Take care not to GC the subscription - keeping notifications alive.
             result.Add(subscription);
             return result;

@@ -33,7 +33,7 @@ namespace AdsSymbolicServerSample
         static ushort s_Port = 25000;
 
         /// <summary>
-        /// Dictionary containing the Values of the Symbols (Symbol -- Value)
+        /// Dictionary containing the Values of the Symbols (Symbol --> Value)
         /// </summary>
         Dictionary<ISymbol, object> _symbolValues = new Dictionary<ISymbol, object>();
 
@@ -137,6 +137,8 @@ namespace AdsSymbolicServerSample
             PrimitiveType dtBool = new PrimitiveType("BOOL", typeof(bool)); // 1-Byte size
             PrimitiveType dtInt = new PrimitiveType("INT", typeof(short)); // 2-Byte size
             PrimitiveType dtDInt = new PrimitiveType("DINT", typeof(int)); // 4-Byte size
+            PrimitiveType dtReal = new PrimitiveType("REAL", typeof(float)); // 4-Byte floating point
+            PrimitiveType dtLReal = new PrimitiveType("LREAL", typeof(double)); // 8-Byte floating point
 
             // Create an TwinCAT specific Type PCCH (for testing purposes)
             // Which is used for interop to C++ TCOM Modules
@@ -218,8 +220,17 @@ namespace AdsSymbolicServerSample
                 .AddDimension(new Dimension(0, 4))
                 .AddDimension(new Dimension(0, 2));
 
-            // Create the Array Type itself
+            // Create the Array of Struct Type itself
             ArrayType dtArray = new ArrayType(dtInt, dims);
+
+            // Create an Array of STRUCT Type
+            // Create the Dimensions
+            IDimensionCollection dims2 = new DimensionCollection()
+                // Add Dimension
+                .AddDimension(new Dimension(0, 10));
+
+            // Create the Complex Array Type itself
+            ArrayType dtComplexArray = new ArrayType(dtStruct, dims2);
 
             // Create an Enumeration Type
             // Define the Enum Fields/Values
@@ -247,9 +258,12 @@ namespace AdsSymbolicServerSample
                 .AddType(dtBool)
                 .AddType(dtInt)
                 .AddType(dtDInt)
+                .AddType(dtReal)
+                .AddType(dtLReal)
                 .AddType(dtString)
                 .AddType(dtStruct)
                 .AddType(dtArray)
+                .AddType(dtComplexArray)
                 .AddType(dtEnum)
                 .AddType(dtAlias)
                 .AddType(dtPointer)
@@ -275,9 +289,12 @@ namespace AdsSymbolicServerSample
                 .AddSymbol("Globals.bool1", dtBool, globals)
                 .AddSymbol("Globals.int1", dtInt, globals)
                 .AddSymbol("Globals.dint1", dtDInt, globals)
+                .AddSymbol("Globals.real1",dtReal,globals)
+                .AddSymbol("Globals.lreal1", dtLReal, globals)
                 .AddSymbol("Globals.string1", dtString, globals)
                 .AddSymbol("Globals.myStruct1", dtStruct, globals)
                 .AddSymbol("Globals.myArray1", dtArray, globals)
+                .AddSymbol("Globals.myComplexArray", dtComplexArray, globals)
                 .AddSymbol("Globals.myEnum1", dtEnum, globals)
                 .AddSymbol("Globals.myAlias1", dtAlias, globals)
                 .AddSymbol("Globals.pointer1", dtPointer, globals)
@@ -286,18 +303,25 @@ namespace AdsSymbolicServerSample
                 .AddSymbol("Main.bool1", dtBool, general)
                 .AddSymbol("Main.int1", dtInt, general)
                 .AddSymbol("Main.dint1", dtDInt, general)
+                .AddSymbol("Main.real1", dtReal, general)
+                .AddSymbol("Main.lreal1", dtLReal, general)
                 .AddSymbol("Main.string1", dtString, general)
                 .AddSymbol("Main.myStruct1", dtStruct, general)
                 .AddSymbol("Main.myArray1", dtArray, general)
+                .AddSymbol("Main.myComplexArray", dtComplexArray, general)
                 .AddSymbol("Main.myEnum1", dtEnum, general)
                 .AddSymbol("Main.myAlias1", dtAlias, general)
                 .AddSymbol("Main.pointer1", dtPointer, general)
                 .AddSymbol("Main.reference1", dtReference, general)
                 .AddSymbol("Main.rpcInvoke1", dtStructRpc, general);
 
-            // Here we set the initial values of or Symbol instances
+            // Here we set the initial values of our Symbol instances
+            // The values are stored for demonstration purposes and simplicity
+            // in a Symbol->Typed Value Dictionary
             _symbolValues.Add(this.Symbols["Globals.bool1"], true);
             _symbolValues.Add(this.Symbols["Globals.int1"], (short)42);
+            _symbolValues.Add(this.Symbols["Globals.real1"], (float)1234.1234);
+            _symbolValues.Add(this.Symbols["Globals.lreal1"], (double)1234.1234);
             _symbolValues.Add(this.Symbols["Globals.dint1"], 42);
             _symbolValues.Add(this.Symbols["Globals.string1"], "Hello world!");
             _symbolValues.Add(this.Symbols["Globals.myStruct1"], new MyStruct("Globals.myStruct1",true,42,99));
@@ -310,6 +334,8 @@ namespace AdsSymbolicServerSample
             _symbolValues.Add(this.Symbols["Main.bool1"], true);
             _symbolValues.Add(this.Symbols["Main.int1"], (short)42);
             _symbolValues.Add(this.Symbols["Main.dint1"], 42);
+            _symbolValues.Add(this.Symbols["Main.real1"], (float)1234.1234);
+            _symbolValues.Add(this.Symbols["Main.lreal1"], (double)1234.1234);
             _symbolValues.Add(this.Symbols["Main.string1"], "Hello world!");
             _symbolValues.Add(this.Symbols["Main.myStruct1"], new MyStruct("Main.myStruct1",true, 42, 99));
             _symbolValues.Add(this.Symbols["Main.myArray1"], new short[4, 2]);
@@ -318,6 +344,25 @@ namespace AdsSymbolicServerSample
             _symbolValues.Add(this.Symbols["Main.pointer1"], 0);
             _symbolValues.Add(this.Symbols["Main.reference1"], 0);
             _symbolValues.Add(this.Symbols["Main.rpcInvoke1"], new MyStruct("Main.rpcInvoke1",false,555,666));
+
+
+            // Adding Values for Complex Arrays
+            MyStruct[] complexArrayValueGlobal = new MyStruct[10];
+
+            for (int i = 0; i < 10; i++)
+            {
+                complexArrayValueGlobal[i] = new MyStruct($"Globals.myComplexArray[i]", true, (short)i, i);
+            }
+
+            MyStruct[] complexArrayValueMain = new MyStruct[10];
+
+            for (int i = 0; i < 10; i++)
+            {
+                complexArrayValueMain[i] = new MyStruct($"Main.myComplexArray[i]", true, (short)i, i);
+            }
+
+            _symbolValues.Add(this.Symbols["Globals.myComplexArray"], complexArrayValueGlobal);
+            _symbolValues.Add(this.Symbols["Main.myComplexArray"], complexArrayValueMain);
 
             return this;
         }
@@ -502,7 +547,7 @@ namespace AdsSymbolicServerSample
                 {
                     string fieldName = match.Groups["name"].Value;
                     string arrayIndex = null;
-                    bool isArrayIndex = false;
+                    //bool isArrayIndex = false;
 
                     list.Add(fieldName);
 
@@ -510,7 +555,7 @@ namespace AdsSymbolicServerSample
 
                     if (!string.IsNullOrEmpty(arrayIndex))
                     {
-                        isArrayIndex = true;
+                        //isArrayIndex = true;
 
                         var dimGroup = match.Groups["subArray"];
                         var dimensions = match.Groups["subArray"].Captures;
@@ -595,7 +640,7 @@ namespace AdsSymbolicServerSample
         /// <returns>System.Object.</returns>
         bool SetSubValue(Span<string> delta, ISymbol rootSymbol, object rootValue, object value)
         {
-            object? oldValue = null;
+            object oldValue = null;
             bool changed = false;
 
             object actValue = rootValue;
